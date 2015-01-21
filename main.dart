@@ -180,5 +180,9 @@ class LogEntry {
   LogEntry(this.network, this.channel, this.message) : timestamp = new DateTime.now();
   LogEntry.notNow(this.network, this.channel, this.message, this.timestamp);
   
-  String format() => "[${timestamp}] ${message}";  
+  String format() {
+    var m = timestamp.toString();
+    m = m.substring(0, m.indexOf("."));
+    return "[${m}] ${message}";
+  }
 }
