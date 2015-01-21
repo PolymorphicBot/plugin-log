@@ -151,6 +151,8 @@ void handlePart(PartEvent event) {
 
 @Start()
 void handleOthers() {
+  bot = plugin.getBot();
+  
   bot.onChannelTopic((event) {
     addEntry(new LogEntry(event.network, event.channel, "Topic: ${event.topic}"));
   });
