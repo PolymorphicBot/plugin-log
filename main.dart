@@ -8,6 +8,7 @@ import "package:polymorphic_bot/api.dart";
 Plugin plugin;
 @BotInstance()
 BotConnector bot;
+@PluginStorage("logging")
 Storage storage;
 
 main(args, port) => polymorphic(args, port);
@@ -16,9 +17,7 @@ Timer _timer;
 
 @Start()
 void start() {
-  bot = plugin.getBot();
   plugin.log("Loading");
-  storage = plugin.getStorage("logging");
 }
 
 @Command("nolog", permission: "nolog")
@@ -132,8 +131,8 @@ void addEntry(LogEntry entry) {
   _queue.add(entry);
 }
 
-@EventHandler("shutdown")
-void stopTimer(_) {
+@Shutdown()
+void stopTimer() {
   if (_timer.isActive) {
     _timer.cancel();
   }
@@ -151,8 +150,6 @@ void handlePart(PartEvent event) {
 
 @Start()
 void handleOthers() {
-  bot = plugin.getBot();
-  
   bot.onCTCP((event) {
     if (!event.target.startsWith("#")) return;
     if (!event.message.startsWith("ACTION ")) return;
