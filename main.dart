@@ -148,15 +148,9 @@ void handlePart(PartEvent event) {
   addEntry(new LogEntry(event.network, event.channel, "${event.user} left"));
 }
 
-@Start()
-void handleOthers() {
-  bot.onCTCP((event) {
-    if (!event.target.startsWith("#")) return;
-    if (!event.message.startsWith("ACTION ")) return;
-    
-    var msg = event.message.substring("ACTION ".length);
-    addEntry(new LogEntry(event.network, event.target, "* ${event.user} ${DisplayHelpers.clean(msg)}"));
-  });
+@OnAction()
+void handleAction(ActionEvent event) {
+  addEntry(new LogEntry(event.network, event.target, "* ${event.user} ${DisplayHelpers.clean(event.message)}"));
 }
 
 @OnMessage()
@@ -164,6 +158,11 @@ void handleMessage(MessageEvent event) {
   if (event.isPrivate) return;
   
   addEntry(new LogEntry(event.network, event.target, "<${event.from}> ${DisplayHelpers.clean(event.message)}"));
+}
+
+@OnQuitPart()
+void handleQuitPart(QuitPartEvent event) {
+  addEntry(new LogEntry(event.network, event.channel, "${event.user} quit"));
 }
 
 Queue<LogEntry> _queue = new Queue<LogEntry>();
