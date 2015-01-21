@@ -133,7 +133,7 @@ void addEntry(LogEntry entry) {
 }
 
 @EventHandler("shutdown")
-void stopTimer() {
+void stopTimer(_) {
   if (_timer.isActive) {
     _timer.cancel();
   }
