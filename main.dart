@@ -6,6 +6,9 @@ import "package:polymorphic_bot/api.dart";
 
 @PluginInstance()
 Plugin plugin;
+@BotInstance()
+BotConnector bot;
+Storage storage;
 
 main(args, port) => polymorphic(args, port);
 
@@ -14,39 +17,61 @@ Timer _timer;
 @Start()
 void start() {
   plugin.log("Loading");
+  storage = plugin.getStorage("logging");
+}
+
+@Command("nolog", permission: "nolog")
+nolog(CommandEvent event) {
+  if (event.args.length != 1) {
+    event.reply("> Usage: nolog <channel>");
+    return;
+  }
+  
+  var channel = "${event.network}:${event.channel}";
+  
+  if (storage.isInList("nolog", channel)) {
+    event.reply("> ERROR: Logging is not enabled for this channel.");
+    return;
+  }
+  
+  storage.addToList("nolog", channel);
+  event.reply("> Logging in ${event.channel} has been disabled.");
 }
 
 @Start()
 void startTimer() {
   _timer = new Timer.periodic(new Duration(seconds: 5), (_) {
-    var map = <String, List<MessageEvent>>{};
-    
-    while (_msgQueue.isNotEmpty) {
-      var event = _msgQueue.removeFirst();
-      var target = event.isPrivate ? "@${event.target}" : event.target.substring(1);
-      var simpleName = "${event.network}/${target}";
-      
-      if (map.containsKey(simpleName)) {
-        map[simpleName].add(event);
-      } else {
-        map[simpleName] = <MessageEvent>[event];
-      }
-    }
-    
-    for (var name in map.keys) {
-      var file = new File("logs/${name}.txt");
-      
-      if (!file.existsSync()) {
-        file.createSync(recursive: true);
-      }
-      
-      var content = map[name].map((event) {
-        return "<${event.from}> ${DisplayHelpers.clean(event.message)}";
-      }).join("\n") + "\n";
-      
-      file.writeAsStringSync(content, mode: FileMode.APPEND);
-    }
+    flushLogs();
   });
+}
+
+void flushLogs() {
+  var map = <String, List<LogEntry>>{};
+  
+  while (_queue.isNotEmpty) {
+    var entry = _queue.removeFirst();
+    var simpleName = "${entry.network}/${entry.channel}";
+    
+    if (map.containsKey(simpleName)) {
+      map[simpleName].add(entry);
+    } else {
+      map[simpleName] = <LogEntry>[entry];
+    }
+  }
+  
+  for (var name in map.keys) {
+    var file = new File("logs/${name}.txt");
+    
+    if (!file.existsSync()) {
+      file.createSync(recursive: true);
+    }
+    
+    var content = map[name].map((entry) {
+      return entry.message;
+    }).join("\n") + "\n";
+    
+    file.writeAsStringSync(content, mode: FileMode.APPEND);
+  }
 }
 
 @Start()
@@ -79,6 +104,12 @@ void httpServer() {
 }
 
 bool fileExists(String path) => new File(path).existsSync();
+void addEntry(LogEntry entry) {
+  if (storage.isInList("nolog", "${entry.network}:${entry.channel}")) {
+    return;
+  }
+  _queue.add(entry);
+}
 
 @EventHandler("shutdown")
 void stopTimer() {
@@ -87,9 +118,44 @@ void stopTimer() {
   }
 }
 
-@OnMessage()
-void handleMessage(MessageEvent event) {
-  _msgQueue.add(event);
+@OnJoin()
+void handleJoin(JoinEvent event) {
+  addEntry(new LogEntry(event.network, event.channel, "${event.user} joined"));
 }
 
-Queue<MessageEvent> _msgQueue = new Queue<MessageEvent>();
+@OnPart()
+void handlePart(PartEvent event) {
+  addEntry(new LogEntry(event.network, event.channel, "${event.user} left"));
+}
+
+@Start()
+void handleOthers() {
+  bot.onChannelTopic((event) {
+    addEntry(new LogEntry(event.network, event.channel, "Topic: ${event.topic}"));
+  });
+  
+  bot.onCTCP((event) {
+    if (!event.target.startsWith("#")) return;
+    if (!event.message.startsWith("ACTION ")) return;
+    
+    var msg = event.message.substring("ACTION ".length);
+    addEntry(new LogEntry(event.network, event.target, "* ${event.user} ${DisplayHelpers.clean(msg)}"));
+  });
+}
+
+@OnMessage()
+void handleMessage(MessageEvent event) {
+  if (event.isPrivate) return;
+  
+  addEntry(new LogEntry(event.network, event.target, "<${event.from}> ${DisplayHelpers.clean(event.message)}"));
+}
+
+Queue<LogEntry> _queue = new Queue<LogEntry>();
+
+class LogEntry {
+  final String network;
+  final String channel;
+  final String message;
+  
+  LogEntry(this.network, this.channel, this.message);
+}
