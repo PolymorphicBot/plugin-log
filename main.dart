@@ -38,6 +38,24 @@ nolog(CommandEvent event) {
   event.reply("> Logging in ${event.channel} has been disabled.");
 }
 
+@Command("logme", permission: "logme")
+logme(CommandEvent event) {
+  if (event.args.length != 1) {
+    event.reply("> Usage: logme <channel>");
+    return;
+  }
+  
+  var channel = "${event.network}:${event.channel}";
+  
+  if (!storage.isInList("nolog", channel)) {
+    event.reply("> ERROR: Logging is already enabled for this channel.");
+    return;
+  }
+  
+  storage.removeFromList("nolog", channel);
+  event.reply("> Logging in ${event.channel} has been enabled.");
+}
+
 @Start()
 void startTimer() {
   _timer = new Timer.periodic(new Duration(seconds: 5), (_) {
