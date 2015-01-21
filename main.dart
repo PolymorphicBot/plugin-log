@@ -34,7 +34,7 @@ void startTimer() {
     }
     
     for (var name in map.keys) {
-      var file = new File("logs/${name}");
+      var file = new File("logs/${name}.txt");
       
       if (!file.existsSync()) {
         file.createSync(recursive: true);
@@ -48,6 +48,37 @@ void startTimer() {
     }
   });
 }
+
+@Start()
+void httpServer() {
+  plugin.createHttpRouter().then((router) {
+    router.addRoute("/", (request) {
+      request.response
+        ..statusCode = 404
+        ..writeln("Not Found.")
+        ..close();
+    });
+    
+    router.defaultRoute((request) {
+      var segments = request.uri.pathSegments;
+      if (segments.length == 2 && fileExists("logs/${segments[0]}/${segments[1]}")) {
+        var file = new File("logs/${segments[0]}/${segments[1]}");
+        var stream = file.openRead();
+        
+        request.response.addStream(stream).then((_) {
+          return request.response.close();
+        });
+      } else {
+        request.response
+          ..statusCode = 404
+          ..writeln("Not Found.")
+          ..close();
+      }
+    });
+  });
+}
+
+bool fileExists(String path) => new File(path).existsSync();
 
 @EventHandler("shutdown")
 void stopTimer() {
