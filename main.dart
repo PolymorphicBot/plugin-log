@@ -28,7 +28,7 @@ nolog(CommandEvent event) {
     return;
   }
   
-  var channel = "${event.network}:${event.channel}";
+  var channel = "${event.network}:${event.channel.substring(1)}";
   
   if (storage.isInList("nolog", channel)) {
     event.reply("> ERROR: Logging is not enabled for this channel.");
@@ -152,10 +152,6 @@ void handlePart(PartEvent event) {
 @Start()
 void handleOthers() {
   bot = plugin.getBot();
-  
-  bot.onChannelTopic((event) {
-    addEntry(new LogEntry(event.network, event.channel, "Topic: ${event.topic}"));
-  });
   
   bot.onCTCP((event) {
     if (!event.target.startsWith("#")) return;
