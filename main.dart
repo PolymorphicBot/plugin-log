@@ -69,7 +69,7 @@ void flushLogs() {
   
   while (_queue.isNotEmpty) {
     var entry = _queue.removeFirst();
-    var simpleName = "${entry.network}/${entry.channel}";
+    var simpleName = "${entry.network}/${entry.channel.substring(1)}";
     
     if (map.containsKey(simpleName)) {
       map[simpleName].add(entry);
