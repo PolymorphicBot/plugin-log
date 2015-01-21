@@ -85,7 +85,7 @@ void flushLogs() {
     }
     
     var content = map[name].map((entry) {
-      return entry.message;
+      return entry.format();
     }).join("\n") + "\n";
     
     file.writeAsStringSync(content, mode: FileMode.APPEND);
@@ -122,10 +122,12 @@ void httpServer() {
 }
 
 bool fileExists(String path) => new File(path).existsSync();
+
 void addEntry(LogEntry entry) {
   if (storage.isInList("nolog", "${entry.network}:${entry.channel}")) {
     return;
   }
+  
   _queue.add(entry);
 }
 
@@ -174,6 +176,10 @@ class LogEntry {
   final String network;
   final String channel;
   final String message;
+  final DateTime timestamp;
   
-  LogEntry(this.network, this.channel, this.message);
+  LogEntry(this.network, this.channel, this.message) : timestamp = new DateTime.now();
+  LogEntry.notNow(this.network, this.channel, this.message, this.timestamp);
+  
+  String format() => "[${timestamp}] ${message}";  
 }
