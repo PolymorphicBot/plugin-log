@@ -16,6 +16,7 @@ Timer _timer;
 
 @Start()
 void start() {
+  bot = plugin.getBot();
   plugin.log("Loading");
   storage = plugin.getStorage("logging");
 }
