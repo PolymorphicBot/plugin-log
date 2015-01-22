@@ -92,33 +92,32 @@ void flushLogs() {
   }
 }
 
-@Start()
-void httpServer() {
-  plugin.createHttpRouter().then((router) {
-    router.addRoute("/", (request) {
-      request.response
-        ..statusCode = 404
-        ..writeln("Not Found.")
-        ..close();
-    });
-    
-    router.defaultRoute((request) {
-      var segments = request.uri.pathSegments;
-      if (segments.length == 2 && fileExists("logs/${segments[0]}/${segments[1]}")) {
-        var file = new File("logs/${segments[0]}/${segments[1]}");
-        var stream = file.openRead();
-        
-        request.response.addStream(stream).then((_) {
-          return request.response.close();
-        });
+const List<String> TRUE_VALUES = const["", "true", "1", "yes"];
+const List<String> FALSE_VALUES = const ["false", "0", "no"];
+
+@HttpEndpoint("/")
+httpRoot(HttpRequest request) => HttpHelper.notFound(request);
+
+@DefaultEndpoint()
+httpDefault(HttpRequest request, HttpResponse response) {
+  var qp = request.uri.queryParameters;
+  var segments = request.uri.pathSegments;
+  if (segments.length == 2 && fileExists("logs/${segments[0]}/${segments[1]}")) {
+    var file = new File("logs/${segments[0]}/${segments[1]}");
+    file.readAsLines().then((lines) {
+      if (TRUE_VALUES.contains(qp["full"])) {
+        response.writeAll(lines, "\n");
       } else {
-        request.response
-          ..statusCode = 404
-          ..writeln("Not Found.")
-          ..close();
+        var end = lines.length - 1;
+        var start = end - 100;
+        if (start < 0) start = 0;
+        response.writeAll(lines.getRange(start, end));
       }
+      response.close();
     });
-  });
+  } else {
+    HttpHelper.notFound(request);
+  }
 }
 
 bool fileExists(String path) => new File(path).existsSync();
