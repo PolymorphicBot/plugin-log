@@ -22,7 +22,7 @@ void start() {
 
 @Command("stop-log", permission: "stop-log")
 stopLog(CommandEvent event) {
-  if (event.args.length != 1) {
+  if (event.args.length > 1) {
     event.reply("> Usage: stop-log [channel]");
     return;
   }
