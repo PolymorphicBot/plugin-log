@@ -116,7 +116,7 @@ httpDefault(HttpRequest request, HttpResponse response) {
   if (segments.length == 2 && fileExists("logs/${segments[0]}/${segments[1]}")) {
     var file = new File("logs/${segments[0]}/${segments[1]}");
     file.readAsLines().then((lines) {
-      if (TRUE_VALUES.contains(qp["full"]) || request.uri.query != null && request.uri.query.endsWith("full")) {
+      if (TRUE_VALUES.contains(qp["full"]) || (request.uri.query != null && request.uri.query.endsWith("full"))) {
         var end = lines.length - 1;
         var start = end - 100;
         if (start < 0) start = 0;
