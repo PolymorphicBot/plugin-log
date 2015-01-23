@@ -103,7 +103,7 @@ void flushLogs() {
   }
 }
 
-const List<String> TRUE_VALUES = const["", "true", "1", "yes"];
+const List<String> TRUE_VALUES = const["true", "1", "yes"];
 const List<String> FALSE_VALUES = const ["false", "0", "no"];
 
 @HttpEndpoint("/")
