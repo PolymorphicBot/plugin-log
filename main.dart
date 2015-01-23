@@ -20,40 +20,51 @@ void start() {
   plugin.log("Loading");
 }
 
-@Command("nolog", permission: "nolog")
-nolog(CommandEvent event) {
+@Command("stop-log", permission: "stop-log")
+stopLog(CommandEvent event) {
   if (event.args.length != 1) {
-    event.reply("> Usage: nolog <channel>");
+    event.reply("> Usage: stop-log [channel]");
     return;
   }
   
-  var channel = "${event.network}:${event.channel.substring(1)}";
+  var channel = "${event.network}:${event.args.length == 0 ? event.channel : event.args[0]}";
   
   if (storage.isInList("nolog", channel)) {
-    event.reply("> ERROR: Logging is not enabled for this channel.");
+    event.reply("> ERROR: Logging is not enabled for ${event.args.length == 0 ? event.channel : event.args[0]}.");
     return;
   }
   
   storage.addToList("nolog", channel);
-  event.reply("> Logging in ${event.channel} has been disabled.");
+  
+  var f = new File("logs/${event.network}/${(event.args.length == 0 ? event.channel : event.args[0]).substring(1)}.txt");
+  if (f.existsSync()) {
+    f.deleteSync();
+  }
+  
+  event.reply("> Logging in ${event.args.length == 0 ? event.channel : event.args[0]} has been disabled.");
 }
 
-@Command("logme", permission: "logme")
-logme(CommandEvent event) {
-  if (event.args.length != 1) {
-    event.reply("> Usage: logme <channel>");
+@Command("log-channel", permission: "log-channel")
+logChannel(CommandEvent event) {
+  if (event.args.length > 1) {
+    event.reply("> Usage: log-channel [channel]");
     return;
   }
   
-  var channel = "${event.network}:${event.channel}";
+  var channel = "${event.network}:${event.args.length == 0 ? event.channel : event.args[0]}";
   
   if (!storage.isInList("nolog", channel)) {
-    event.reply("> ERROR: Logging is already enabled for this channel.");
+    event.reply("> ERROR: Logging is already enabled for ${event.args.length == 0 ? event.channel : event.args[0]}.");
     return;
   }
   
   storage.removeFromList("nolog", channel);
-  event.reply("> Logging in ${event.channel} has been enabled.");
+  event.reply("> Logging in ${event.args.length == 0 ? event.channel : event.args[0]} has been enabled.");
+}
+
+@Command("flush-logs", permission: "flush-logs")
+flushCommand(CommandEvent event) {
+  flushLogs();
 }
 
 @Start()
